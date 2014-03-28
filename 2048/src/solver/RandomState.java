@@ -3,14 +3,17 @@ package solver;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class RandomState extends State {
 
 	private class RandomChild {
-		public Integer proba;
+		public Double proba;
 		public DecisionState state;
 
-		public RandomChild(Integer proba, DecisionState state) {
+		public RandomChild(Double proba, DecisionState state) {
 			this.proba = proba;
 			this.state = state;
 		}
@@ -86,9 +89,23 @@ public class RandomState extends State {
 
 	protected List<RandomChild> computeChilds() {
 		childs = new ArrayList<RandomChild>();
-		// TODO
-		// Get all possible spawnable number
-		// get associated proba.
+//		 TODO
+//		 Get all possible spawnable number
+//		 get associated proba.
+		Map<Integer,Double> proba = LearningManager.getInstance().getSpawnableSquareProba();
+		Set<Entry<Integer,Double>> set = proba.entrySet();
+		for(int l =0;l<GRID_SIZE;l++){
+			for(int c =0;c<GRID_SIZE;c++){
+				if(get(l, c)==EMPTY_VALUE){
+					for(Entry<Integer,Double> entry : set){
+						DecisionState state = DecisionState.buildState();
+						copyInto(state);
+						state.set(l, c, entry.getKey());
+						childs.add(new RandomChild(entry.getValue(), state));
+					}
+				}
+			}
+		}
 		return childs;
 	}
 }

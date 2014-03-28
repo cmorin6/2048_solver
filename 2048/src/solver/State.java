@@ -96,4 +96,12 @@ public abstract class State {
 		}
 		return true;
 	}
+	
+	public void copyInto(State state){
+		for(int l =0;l<GRID_SIZE;l++){
+			for(int c =0;c<GRID_SIZE;c++){
+				state.set(l, c, get(l,c));
+			}
+		}
+	}
 }

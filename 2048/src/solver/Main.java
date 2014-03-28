@@ -9,8 +9,11 @@ import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
 
 import solver.DecisionState.MOVE;
 import solver.DecisionState.MoveChild;
@@ -138,7 +141,7 @@ public class Main {
 	public static DecisionState getGameBoard() {
 		Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
 		BufferedImage screen = robot.createScreenCapture(new Rectangle(size));
-		File outputfile = new File("C:\\Users\\Morin\\Desktop\\image.jpg");
+		File outputfile = new File("C:\\Users\\Cedric\\Desktop\\image.jpg");
 		try {
 			// upperLeftPoint
 			int x = 0;
@@ -158,6 +161,7 @@ public class Main {
 			}
 
 			if (found) {
+
 				// System.out.println(new Color(color));
 				int oldX = x;
 				int oldY = y;
@@ -177,9 +181,8 @@ public class Main {
 				// System.out.println(new Color(color));
 				// System.out.println("end border : "+x);
 				int border_width = x - 1 - startX;
-				// System.out.println("startX : " + startX + " border_width : "
-				// +
-				// border_width);
+//				 System.out.println("startX : " + startX + " border_width : "
+//						+ border_width);
 				// TODO check border
 
 				// height
@@ -196,7 +199,7 @@ public class Main {
 				int top = y;
 
 				y = oldY;
-				screen.setRGB(startX, y, Color.GREEN.getRGB());
+//				screen.setRGB(startX, y, Color.GREEN.getRGB());
 				while (isBorder(color)) {
 					y -= 10;
 					color = screen.getRGB(x, y);
@@ -207,7 +210,7 @@ public class Main {
 				}
 				int height = top - y;
 				int bottom = y;
-				// System.out.println(height);
+//				 System.out.println(height);
 
 				// topright
 				x = startX + height - (border_width / 2);
@@ -217,26 +220,31 @@ public class Main {
 				// screen.setRGB(x+1, y+1, Color.RED.getRGB());
 				// screen.setRGB(x-1, y+1, Color.RED.getRGB());
 				// screen.setRGB(x-1, y-1, Color.RED.getRGB());
-				// try {
-				// boolean ok = ImageIO.write(screen, "jpg", outputfile);
-				// if (ok) {
-				// System.out.println("done");
-				// }
-				// } catch (IOException e) {
-				// // TODO Auto-generated catch block
-				// e.printStackTrace();
-				// }
-				if (!isBorder(screen.getRGB(x, y)))
+				//
+
+				if (!isBorder(screen.getRGB(x, y))) {
 					return null;
+				}
 				x = startX + height + (border_width / 2);
 				y = bottom + (border_width / 2);
-				if (isBorder(screen.getRGB(x, y)))
+				if (isBorder(screen.getRGB(x, y))) {
+//
+//					screen.setRGB(x, y, Color.RED.getRGB());
+//					try {
+//						boolean ok = ImageIO.write(screen, "jpg", outputfile);
+//						if (ok) {
+//							System.out.println("done");
+//						}
+//					} catch (IOException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
 					return null;
+				}
 				x = startX + height + (border_width / 2);
 				y = bottom - (border_width / 2);
 				if (isBorder(screen.getRGB(x, y)))
 					return null;
-
 				// bottom right
 				x = startX + height - (border_width / 2);
 				y = bottom + height - (border_width / 2);
@@ -250,7 +258,6 @@ public class Main {
 				y = bottom + height - (border_width / 2);
 				if (isBorder(screen.getRGB(x, y)))
 					return null;
-
 				// visible.
 				int square_size = (int) (height - ((border_width + 2f) * 5f)) / 4;
 				// System.out.println(square_size);
@@ -296,7 +303,7 @@ public class Main {
 			}
 		} catch (ArrayIndexOutOfBoundsException e) {
 			System.out.println("error while reading the grid");
-//			e.printStackTrace();
+			// e.printStackTrace();
 		}
 
 		return null;

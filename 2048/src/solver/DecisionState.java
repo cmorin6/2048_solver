@@ -106,7 +106,7 @@ public class DecisionState extends State {
 	private int estimateDepth() {
 		// TODO : use current state to determine branching factor and estimate a
 		// suitable depth;
-		return 1;
+		return 3;
 	}
 
 	protected List<MoveChild> getChilds() {
