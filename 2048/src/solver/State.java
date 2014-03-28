@@ -1,7 +1,9 @@
 package solver;
 
+import java.util.Arrays;
 
 public abstract class State {
+
 
 	public final static int GRID_SIZE = 4;
 	public final static int EMPTY_VALUE = 0;
@@ -10,22 +12,21 @@ public abstract class State {
 	
 
 	// for possible later pooling
-	protected int referenceCount=0;
-
+	protected int referenceCount = 0;
 
 	protected State() {
 
 	}
-	
-	public int getReferenceCount(){
+
+	public int getReferenceCount() {
 		return referenceCount;
 	}
-	
-	public void incrementRefrenceCount(){
+
+	public void incrementRefrenceCount() {
 		referenceCount++;
 	}
-	
-	public void decrementRefrenceCount(){
+
+	public void decrementRefrenceCount() {
 		referenceCount--;
 	}
 
@@ -42,9 +43,9 @@ public abstract class State {
 		for (int line = 0; line < GRID_SIZE; line++) {
 			boolean first = true;
 			for (int col = 0; col < GRID_SIZE; col++) {
-				if(first){
-					first =false;
-				}else{
+				if (first) {
+					first = false;
+				} else {
 					sb.append(' ');
 				}
 				sb.append(get(line, col));
@@ -53,30 +54,46 @@ public abstract class State {
 		}
 		System.out.println(sb.toString());
 	}
-	
-	public interface Heuristic{
+
+	public interface Heuristic {
 		public double getValue(State state);
 	}
-	
-	public double getHeuristicValue(Heuristic heuristic){
+
+	public double getHeuristicValue(Heuristic heuristic) {
 		return heuristic.getValue(this);
 	}
 
-	// private boolean isUpEnable() {
-	// for (int col = 0; col < GRID_SIZE; col++) {
-	// int OldVal = EMPTY_VALUE;
-	// for (int line = 0; line < GRID_SIZE; line++) {
-	// int val = get(line, col);
-	// if (val == EMPTY_VALUE) {
-	// return true;
-	// }
-	// }
-	// }
-	// return false;
-	// }
 
-	
+	@Override
+	public int hashCode() {
+		//TODO compute this once and reset it on pool return
+		final int prime = 31;
+		int result = 0;
+		for(int[] line : grid){
+			for(int val : line){
+				result*=prime;
+				result += val;
+			}
+		}
+		return result;
+	}
 
-	
-
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		State other = (State) obj;
+		for(int i = 0;i<GRID_SIZE;i++){
+			for(int j = 0;j<GRID_SIZE;j++){
+				if(get(i, j)!=other.get(i,j)){
+					return false;
+				}
+			}
+		}
+		return true;
+	}
 }

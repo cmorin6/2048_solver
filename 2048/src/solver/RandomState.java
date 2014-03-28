@@ -1,6 +1,7 @@
 package solver;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class RandomState extends State {
@@ -16,6 +17,20 @@ public class RandomState extends State {
 	}
 
 	private List<RandomChild> childs;
+	
+	private final static HashMap<RandomState,RandomState> visitedStates = new HashMap<RandomState,RandomState>();
+	
+	public static RandomState tryFindState(RandomState genState){
+		RandomState ret = visitedStates.get(genState);
+		if(ret!=null){
+			RandomState.poolState(genState);
+		}else{
+			ret = genState;
+			visitedStates.put(genState, genState);
+		}
+		ret.incrementRefrenceCount();
+		return ret;		
+	}
 	
 	//Pooling
 	private final static List<RandomState> pool = new ArrayList<RandomState>();
@@ -33,10 +48,11 @@ public class RandomState extends State {
 	public static void poolState(RandomState state){
 		for(RandomChild child : state.getChilds()){
 			child.state.decrementRefrenceCount();
-			if(state.getReferenceCount()==0){
+			if(child.state.getReferenceCount()==0){
 				DecisionState.poolState(child.state);
 			}
 		}
+		visitedStates.remove(state);
 		state.childs=null;
 		pool.add(state);
 	}
