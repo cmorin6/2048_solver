@@ -1,3 +1,5 @@
+package solver;
+
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -50,9 +52,13 @@ public class Main {
 			while (!end) {
 				// getGridPosition()
 				// robot.getPixelColor(x, y)
-				int[][] board = getGameBoard();
-				if (board != null) {
+				State state = getGameBoard();
+				if (state != null) {
 					System.out.println("found");
+//					state.print();
+//					System.out.println("-----------");
+//					state.generateDownState().print();
+					return;
 				}
 				Thread.sleep(300);
 
@@ -65,7 +71,7 @@ public class Main {
 		}
 	}
 
-	public static int[][] getGameBoard() {
+	public static State getGameBoard() {
 		Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
 		BufferedImage screen = robot.createScreenCapture(new Rectangle(size));
 		File outputfile = new File("C:\\Users\\Morin\\Desktop\\image.jpg");
@@ -183,7 +189,7 @@ public class Main {
 			// visible.
 			int square_size = (int) (height - ((border_width + 2f) * 5f)) / 4;
 //			System.out.println(square_size);
-			int[][] colorGrid = new int[4][4];
+			State state=DecisionState.buildState();
 			x = startX;
 			y = bottom;
 			for (int i = 0; i < 4; i++) {
@@ -199,7 +205,7 @@ public class Main {
 					if (colorToValue.containsKey(color)) {
 						value = colorToValue.get(color);
 					}
-					colorGrid[i][j] = value;
+					state.set(i, j, value);
 					// System.out.print(new Color(color)+ " ");
 					// System.out.print(colorGrid[i][j] + " ");
 				}
@@ -215,7 +221,7 @@ public class Main {
 			// // TODO Auto-generated catch block
 			// e.printStackTrace();
 			// }
-			return colorGrid;
+			return state;
 			// System.out
 			// .println("--------------------------------------------------------------");
 		}
