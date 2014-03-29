@@ -42,8 +42,10 @@ public class RandomState extends State {
 		RandomState ret;
 		if(pool.isEmpty()){
 			ret = new RandomState();
+			SolverAgent.instantiatedStates++;
 		}else{
 			ret = pool.remove(0);
+			SolverAgent.reusedStates++;
 		}
 		return ret;
 	}
@@ -58,8 +60,18 @@ public class RandomState extends State {
 		visitedStates.remove(state);
 		state.childs=null;
 		pool.add(state);
+		SolverAgent.returnedToPool++;
 	}
 	//Pooling
+	
+	public DecisionState findMatchingChildren(DecisionState state){
+		for(RandomChild child : getChilds()){
+			if(state.equals(child.state)){
+				return child.state;
+			}
+		}
+		return null;
+	}
 
 	protected RandomState() {
 
@@ -92,7 +104,7 @@ public class RandomState extends State {
 //		 TODO
 //		 Get all possible spawnable number
 //		 get associated proba.
-		Map<Integer,Double> proba = LearningManager.getInstance().getSpawnableSquareProba();
+		Map<Integer,Double> proba = SolverAgent.getInstance().getSpawnableSquareProba();
 		Set<Entry<Integer,Double>> set = proba.entrySet();
 		for(int l =0;l<GRID_SIZE;l++){
 			for(int c =0;c<GRID_SIZE;c++){

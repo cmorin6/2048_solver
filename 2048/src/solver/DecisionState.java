@@ -29,7 +29,7 @@ public class DecisionState extends State {
 	}
 
 	private static Random rand = new Random();
-	
+
 	private final static HashMap<DecisionState, DecisionState> visitedStates = new HashMap<DecisionState, DecisionState>();
 
 	public static DecisionState tryFindState(DecisionState genState) {
@@ -50,8 +50,10 @@ public class DecisionState extends State {
 		DecisionState ret;
 		if (pool.isEmpty()) {
 			ret = new DecisionState();
+			SolverAgent.instantiatedStates++;
 		} else {
 			ret = pool.remove(0);
+			SolverAgent.reusedStates++;
 		}
 		return ret;
 	}
@@ -66,6 +68,7 @@ public class DecisionState extends State {
 		visitedStates.remove(state);
 		state.childs = null;
 		pool.add(state);
+		SolverAgent.returnedToPool++;
 	}
 
 	// Pooling
@@ -80,12 +83,12 @@ public class DecisionState extends State {
 				bestValue = value;
 				bestMove.clear();
 				bestMove.add(child);
-			}else if(value == bestValue){
+			} else if (value == bestValue) {
 				bestMove.add(child);
 			}
 		}
 		MoveChild move = null;
-		if(!bestMove.isEmpty()){
+		if (!bestMove.isEmpty()) {
 			move = bestMove.get(rand.nextInt(bestMove.size()));
 		}
 		return move;
@@ -104,9 +107,24 @@ public class DecisionState extends State {
 	}
 
 	private int estimateDepth() {
-		// TODO : use current state to determine branching factor and estimate a
-		// suitable depth;
-		return 3;
+		int avg = 0;
+		for (int col = 0; col < GRID_SIZE; col++) {
+			for (int line = 0; line < GRID_SIZE; line++) {
+				avg += get(line, col);
+			}
+		}
+		avg /= GRID_SIZE * GRID_SIZE;
+
+		System.out.println("avg : " + avg);
+		if (avg > 180) {
+			return 7;
+		} else if (avg> 75) {
+			return 6;
+		} else {
+			return 5;
+		}
+		// // if(avg>)
+		// return 5;
 	}
 
 	protected List<MoveChild> getChilds() {
