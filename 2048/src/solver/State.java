@@ -7,9 +7,12 @@ public abstract class State {
 
 	public final static int GRID_SIZE = 4;
 	public final static int EMPTY_VALUE = 0;
+	public final static boolean REUSE_STATES=false;
 
 	protected final int[][] grid = new int[GRID_SIZE][GRID_SIZE];
 	
+	protected int hash =0;
+	protected boolean computeHash = false;
 
 	// for possible later pooling
 	protected int referenceCount = 0;
@@ -28,6 +31,9 @@ public abstract class State {
 
 	public void decrementRefrenceCount() {
 		referenceCount--;
+		if(referenceCount<0){
+			throw new ArrayIndexOutOfBoundsException();
+		}
 	}
 
 	public int get(int line, int column) {
@@ -66,16 +72,23 @@ public abstract class State {
 
 	@Override
 	public int hashCode() {
-		//TODO compute this once and reset it on pool return
-		final int prime = 31;
-		int result = 0;
-		for(int[] line : grid){
-			for(int val : line){
-				result*=prime;
-				result += val;
+		if(computeHash){
+			computeHash = false;
+			final int prime = 31;
+			hash = 0;
+			for(int[] line : grid){
+				for(int val : line){
+					hash*=prime;
+					hash += val;
+				}
 			}
 		}
-		return result;
+		return hash;
+	}
+	
+	public void reset(){
+		referenceCount=0;
+		computeHash = true;
 	}
 
 	@Override

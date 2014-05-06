@@ -219,6 +219,7 @@ public class IOManager {
 			info.print();
 		}
 		if (!checkInfo(info, screen)) {
+			DecisionState.poolState((DecisionState)info.colorState,"getGameInfo");
 			if (GETGAMEINFODEBUG) {
 				System.err.println("Info check failled.");
 			}

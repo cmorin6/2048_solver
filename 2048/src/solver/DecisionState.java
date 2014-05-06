@@ -3,7 +3,10 @@ package solver;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+
+import solver.RandomState.DebugInfo;
 
 public class DecisionState extends State {
 
@@ -24,6 +27,9 @@ public class DecisionState extends State {
 
 	private List<MoveChild> childs;
 
+	private int lastDepth = -100;
+	private double lastHeuristicValue;
+
 	protected DecisionState() {
 
 	}
@@ -33,11 +39,21 @@ public class DecisionState extends State {
 	private final static HashMap<DecisionState, DecisionState> visitedStates = new HashMap<DecisionState, DecisionState>();
 
 	public static DecisionState tryFindState(DecisionState genState) {
-		DecisionState ret = visitedStates.get(genState);
-		if (ret != null) {
-			DecisionState.poolState(genState);
+		DecisionState ret;
+		if (State.REUSE_STATES) {
+			ret = visitedStates.get(genState);
+			long time = System.currentTimeMillis();
+			if (ret != null) {
+				DecisionState.poolState(genState, "tryFindState");
+				SolverAgent.reattachedStates++;
+			} else {
+				ret = genState;
+				visitedStates.put(genState, genState);
+			}
+			SolverAgent.reusing_time += System.currentTimeMillis() - time;
+			SolverAgent.reusing_count += 1;
 		} else {
-			visitedStates.put(genState, genState);
+			ret = genState;
 		}
 		ret.incrementRefrenceCount();
 		return ret;
@@ -52,31 +68,66 @@ public class DecisionState extends State {
 			ret = new DecisionState();
 			SolverAgent.instantiatedStates++;
 		} else {
+			// trace.remove(0);
 			ret = pool.remove(0);
 			SolverAgent.reusedStates++;
 		}
 		return ret;
 	}
 
-	public static void poolState(DecisionState state) {
-		for (MoveChild child : state.getChilds()) {
-			child.state.decrementRefrenceCount();
-			if (child.state.getReferenceCount() == 0) {
-				RandomState.poolState(child.state);
+	public static List<DebugInfo> trace = new ArrayList<DebugInfo>();
+
+	public static void poolState(DecisionState state, String caller) {
+		if (state.getReferenceCount() <= 0) {
+			if (state.childs != null) {
+				for (MoveChild child : state.getChilds()) {
+					child.state.decrementRefrenceCount();
+					RandomState.poolState(child.state, caller);
+				}
+				state.childs = null;
 			}
+			// DEBUG
+			// for (DebugInfo info : trace) {
+			// if (info.state == state) {
+			// System.out.println(info.call);
+			// throw new NullPointerException();
+			// }
+			// }
+			// trace.add(new DebugInfo(state, caller));
+			// DEBUG
+			state.reset();
+			visitedStates.remove(state);
+			pool.add(state);
+			SolverAgent.returnedToPool++;
 		}
-		visitedStates.remove(state);
-		state.childs = null;
-		pool.add(state);
-		SolverAgent.returnedToPool++;
 	}
 
 	// Pooling
 
+	public void checkChildNotPooled(int depth) {
+		for (DecisionState state : pool) {
+			if (state == this) {
+				System.out.println("depth  = " + depth);
+				throw new NullPointerException();
+			}
+		}
+		if (childs != null) {
+			for (MoveChild child : childs) {
+				child.state.checkChildNotPooled(depth - 1);
+			}
+		}
+	}
+
 	public MoveChild getBestMove(Heuristic heuristic) {
-		int depth = estimateDepth();
+		return getBestMove(heuristic, estimateDepth());
+	}
+
+	public MoveChild getBestMove(Heuristic heuristic, int depth) {
 		double bestValue = 0;
 		List<MoveChild> bestMove = new ArrayList<MoveChild>();
+		if (getChilds().size() == 1) {
+			return getChilds().get(0);
+		}
 		for (MoveChild child : getChilds()) {
 			double value = child.state.evaluate(depth - 1, heuristic);
 			if (value > bestValue) {
@@ -96,35 +147,46 @@ public class DecisionState extends State {
 
 	public double evaluate(int depth, Heuristic heuristic) {
 		double ret = 0;
-		if (depth == 0) {
-			ret = getHeuristicValue(heuristic);
+		if (lastDepth == depth) {
+			SolverAgent.calculationaved += getRecChildCount();
+			return lastHeuristicValue;
 		} else {
-			for (MoveChild child : getChilds()) {
-				ret = Math.max(ret, child.state.evaluate(depth - 1, heuristic));
+			if (depth <= 0) {
+				ret = getHeuristicValue(heuristic);
+			} else {
+				for (MoveChild child : getChilds()) {
+					ret = Math.max(ret,
+							child.state.evaluate(depth - 1, heuristic));
+				}
 			}
+			lastHeuristicValue = ret;
+			lastDepth = depth;
 		}
 		return ret;
 	}
 
 	private int estimateDepth() {
-		int avg = 0;
-		for (int col = 0; col < GRID_SIZE; col++) {
-			for (int line = 0; line < GRID_SIZE; line++) {
-				avg += get(line, col);
-			}
-		}
-		avg /= GRID_SIZE * GRID_SIZE;
-
-		System.out.println("avg : " + avg);
-		if (avg > 180) {
-			return 7;
-		} else if (avg> 75) {
-			return 6;
-		} else {
-			return 5;
-		}
-		// // if(avg>)
+		// int count = 0;
+		// float avg = 9;
+		// int sum = 0;
+		// for (int col = 0; col < GRID_SIZE; col++) {
+		// for (int line = 0; line < GRID_SIZE; line++) {
+		// if (get(line, col) == 0) {
+		// count++;
+		// }
+		// avg += get(line, col);
+		// sum++;
+		// }
+		// }
+		// avg /= sum;
+		// if (count < 4 && avg > 80) {
+		// System.out.println("depth 6");
+		// return 6;
+		// } else {
+		// System.out.println("depth 5");
 		// return 5;
+		// }
+		return 5;
 	}
 
 	protected List<MoveChild> getChilds() {
@@ -136,11 +198,12 @@ public class DecisionState extends State {
 
 	protected List<MoveChild> computeChilds() {
 		childs = new ArrayList<MoveChild>();
-
+		lastDepth = -100;
 		// UP
 		if (isUpEnable()) {
 			RandomState state = generateUpState();
 			state = RandomState.tryFindState(state);
+			// state.incrementRefrenceCount();
 			childs.add(new MoveChild(MOVE.UP, state));
 		}
 
@@ -148,6 +211,7 @@ public class DecisionState extends State {
 		if (isRightEnable()) {
 			RandomState state = generateRightState();
 			state = RandomState.tryFindState(state);
+			// state.incrementRefrenceCount();
 			childs.add(new MoveChild(MOVE.RIGHT, state));
 		}
 
@@ -155,6 +219,7 @@ public class DecisionState extends State {
 		if (isDownEnable()) {
 			RandomState state = generateDownState();
 			state = RandomState.tryFindState(state);
+			// state.incrementRefrenceCount();
 			childs.add(new MoveChild(MOVE.DOWN, state));
 		}
 
@@ -162,6 +227,7 @@ public class DecisionState extends State {
 		if (isLeftEnable()) {
 			RandomState state = generateLeftState();
 			state = RandomState.tryFindState(state);
+			// state.incrementRefrenceCount();
 			childs.add(new MoveChild(MOVE.LEFT, state));
 		}
 
@@ -189,6 +255,24 @@ public class DecisionState extends State {
 			}
 		}
 		return false;
+	}
+
+	public int getChildCount() {
+		int ret = 0;
+		if (childs != null) {
+			ret = childs.size();
+		}
+		return ret;
+	}
+
+	public int getRecChildCount() {
+		int count = 1;
+		if (childs != null) {
+			for (MoveChild child : childs) {
+				count += child.state.getRecChildCount();
+			}
+		}
+		return count;
 	}
 
 	// TESTED
@@ -398,6 +482,23 @@ public class DecisionState extends State {
 			}
 		}
 		return ret;
+	}
+
+	public Map<State, Integer> filReferenceMap(Map<State, Integer> map) {
+		Integer refCount = map.get(this);
+		if (refCount != null) {
+			map.remove(this);
+		} else {
+			refCount = new Integer(0);
+		}
+		refCount++;
+		map.put(this, refCount);
+		if (childs != null) {
+			for (MoveChild child : childs) {
+				map = child.state.filReferenceMap(map);
+			}
+		}
+		return map;
 	}
 
 }
